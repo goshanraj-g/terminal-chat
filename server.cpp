@@ -107,11 +107,17 @@ void serve_one(Client *self)
         say_console(std::string(pick_color(self->id)) + self->nick + ": " + kReset.data() + line, false);
     }
 
-    //remove client
+    // handle server disconnect
+    // close socket
     closesocket(self->sock);
     {
-        std::lock_guard lk(g_guard);
-        std::erase_if(g_clients, [id = self->id](const Client &c)
-                      { return c.id == id; });
+        std::lock_guard<std::mutex> lk(g_guard);
+        g_clients.erase(
+            std::remove_if(g_clients.begin(), g_clients.end(),
+                           [id = self->id](const Client &c)
+                           {
+                               return c.id == id;
+                           }),
+            g_clients.end());
     }
 }
