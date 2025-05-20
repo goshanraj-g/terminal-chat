@@ -104,8 +104,10 @@ void serve_one(Client *self)
         broadcast_raw(&self->id, sizeof self->id);
         broadcast_text(line);
 
-        say_console(std::string(pick_color(self->id)) + self->nick + " : " + kReset.data() + line, false);
+        say_console(std::string(pick_color(self->id)) + self->nick + ": " + kReset.data() + line, false);
     }
+
+    //remove client
     closesocket(self->sock);
     {
         std::lock_guard lk(g_guard);
