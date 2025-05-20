@@ -111,13 +111,30 @@ void serve_one(Client *self)
     // close socket
     closesocket(self->sock);
     {
+        // locks global mutex guard, and ensures that no other thread can R/W to g_clients durnig this operation
+        // lk(g_guard) also makes it so the lock is released when it goes out of the block
         std::lock_guard<std::mutex> lk(g_guard);
         g_clients.erase(
+            // figures out which client to remove by ordering them to the very end, and checking id's
             std::remove_if(g_clients.begin(), g_clients.end(),
                            [id = self->id](const Client &c)
                            {
                                return c.id == id;
                            }),
             g_clients.end());
+
+        // this lambda function checks each client in the vector, and returns true for the ones that id matches
     }
+}
+
+int main()
+{
+    ansi_on();
+
+    WSADATA wsa;
+    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+    {
+        std::cerr << "WSAStartup failed\n";
+        return 1;
+    };
 }

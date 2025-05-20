@@ -1,5 +1,5 @@
 CXX     := g++
-CXXFLAGS:= -std=c++20 -Wall -pthread
+CXXFLAGS:= -std=c++11 -Wall -pthread
 
 all: server client
 server: server.cpp
