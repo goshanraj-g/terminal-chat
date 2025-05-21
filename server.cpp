@@ -81,8 +81,7 @@ void serve_one(Client *self)
         broadcast_text(line);
 
         say_console(std::string(pick_color(self->id)) + self->nick +
-                        ": " + kReset.data() + line,
-                    false);
+                    ": " + kReset.data() + line);
     }
 
     /* --- cleanup ---------------------------------------------------------- */

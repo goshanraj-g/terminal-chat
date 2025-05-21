@@ -38,11 +38,11 @@ void listener(SOCKET s)
         if (recv(s, name, sizeof name, 0) <= 0)
             break;
         if (recv(s,
-                 reinterpret_cast<char *>(&color_id), 
+                 reinterpret_cast<char *>(&color_id),
                  sizeof color_id,
                  0) <= 0)
             break;
-            
+
         if (recv(s, line, sizeof line, 0) <= 0)
             break;
 
@@ -83,7 +83,8 @@ int main()
     char line[kMaxLineLen]{};
     while (!g_quit.load())
     {
-        std::cout << pick_color(1) << "You : " << kReset << std::flush;
+        std::cout << "\n"
+                  << pick_color(1) << "You : " << kReset << std::flush;
         if (!std::cin.getline(line, sizeof line))
             break;
 
