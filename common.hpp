@@ -1,6 +1,7 @@
 #pragma once           // file is only included once
 #include <string_view> // read-only string
 #include <array>       // fixed size array
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 void enable_ansi()
@@ -22,9 +23,7 @@ inline constexpr std::array<std::string_view, 6> kAnsi = {
 // resets text formatting back to default
 inline constexpr std::string_view kReset = "\x1b[0m";
 
-[[notidcard]] inline std::string_view pick_color(int id)
+[[nodiscard]] inline std::string_view pick_color(int id)
 {
-    return kAnsi[id % kAnsi.size()]; // returns a color from it's id
+    return kAnsi[id % kAnsi.size()];
 }
-
-// [[notidcard]] tells compiler to warn if this function is called, but ignore return value
