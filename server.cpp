@@ -131,10 +131,73 @@ int main()
 {
     ansi_on();
 
-    WSADATA wsa;
-    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+    // WinSock initialization (required before you can use any socket function)
+
+    WSADATA wsa;                               // defining wsa as a WSADATA structure (has version + status)
+    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) // initializing the Winsock library, ver(2.2)
     {
         std::cerr << "WSAStartup failed\n";
         return 1;
     };
+
+    SOCKET lsock = socket(AF_INET, SOCK_STREAM, 0); // creates TCP socket (listening socket) (IPv4, TCP, default protocol)
+    if (lsock == INVALID_SOCKET)
+    {
+        std::cerr << "socket() failed\n";
+        return 1;
+    }
+
+    sockaddr_in addr{};                // declares and zero-initializes sockadr_in struct hold (ip (IPv4) and port)
+    addr.sin_family = AF_INET;         // sends address family to AF_INET (IPv4)
+    addr.sin_addr.s_addr = INADDR_ANY; // binds socket to all network interfaces on machine
+    // INADDR_ANY -> special constant allowing server to accept connections on localhost, local IP, and any other network interface
+    addr.sin_port = htons(kPort); // sets port number the server will listen on, htons -> host to network short, this converts port number to big-endian
+
+    if (bind(lsock, reinterpret_cast<sockaddr *>(&addr), sizeof addr) == SOCKET_ERROR) // associates lsock with local address
+    // bind() expects sockaddr*, but there is only sockaddr_in, so it needs to be casted
+    {
+        std::cerr << "bind() failed\n";
+        return 1;
+    }
+
+    // allows connections (tells listening socket to start listening to connection requests, SOMAXCONN -> maximum number of connections OS queue can hold)
+    listen(lsock, SOMAXCONN);
+    say_console(std::string(pick_color(5)) + "\n --- Windows Chat Room listening on port " + std::to_string(kPort) + " ---\n" + std::string(kReset));
+
+    int seed = 0; // create a seed to assign UID to each new client
+    while (true)
+    {
+        // infinite loop to accept new incoming client connections
+        // accepts a new incoming client on the listening socket
+        // once a client connects, the TCP handshake is completed, and returns a new socket (csock)
+        SOCKET csock = accept(lsock, nullptr, nullptr); // the clients address info, and size of the address aren't captured
+        if (csock == INVALID_SOCKET)
+        {
+            continue;
+        }
+
+        // create client struct, and initialize var
+
+        Client cl;
+        cl.id = ++seed;
+        cl.sock = csock;
+        cl.th = std::thread(serve_one, &cl); // spawns a new thread to run the function (serve_one)
+        // the idea is that each client should be handled in it's own thread
+
+        {
+            // prevents other threads from reading/modifying g_guard when adding new client
+            std::lock_guard lk(g_guard);
+            // adds new client to end of g_clients, and uses move to move the client into the vector instead of copying, avoiding copying thread objects/socket handles
+            g_clients.push_back(std::move(cl));
+        }
+
+        // detaches thread of most recently added client (gets last client which was added to g_clients, and detaches)
+        // this means that the thread runs independently, and the main server thread does not wait for this to finish
+        //
+        g_clients.back().th.detach();
+    }
+
+    // close listening socket, and clean WSA
+    closesocket(lsock);
+    WSACleanup();
 }
